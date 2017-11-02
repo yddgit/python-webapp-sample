@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-'''
+u'''
 WebApp启动文件，负责初始化数据库、初始化Web框架，然后加载urls.py，最后启动Web服务
 '''
 
@@ -16,6 +16,9 @@ from transwarp.web import WSGIApplication, Jinja2TemplateEngine
 from config import configs
 
 def datetime_filter(t):
+    u'''
+    定义datetime_filter，输入是t，输出是unicode字符串
+    '''
     delta = int(time.time() - t)
     if delta < 60:
         return u'1分钟前'

@@ -4,9 +4,13 @@
 from transwarp.web import get, view
 from models import User, Blog, Comment
 
-@view('test_users.html')
+@view('blogs.html')
 @get('/')
-def test_users():
-    users = User.find_all()
-    return dict(users=users)
+def index():
+    u'博客首页'
+    blogs = Blog.find_all()
+    # 查找登录用户
+    user = User.find_first('where email=?', 'tom@example.com')
+    return dict(blogs=blogs, user=user)
+
 
