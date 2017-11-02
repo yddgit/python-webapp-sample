@@ -64,7 +64,8 @@ class Comment(Model):
 
 if __name__ == '__main__':
     # 生成schema.sql脚本
-    with open('schema.sql', 'w') as f:
+    import os
+    with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'schema.sql'), 'w') as f:
         sql = ['-- schema.sql']
         sql.append('-- help:')
         sql.append('--   Login MySQL: mysql -u root -p')
