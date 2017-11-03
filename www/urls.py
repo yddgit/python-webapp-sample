@@ -58,12 +58,28 @@ def check_admin():
         return
     raise APIPermissionError('No permission.')
 
+def _get_page_index():
+    u'获取当前页码'
+    page_index = 1
+    try:
+        page_index = int(ctx.request.get('page', '1'))
+    except ValueError:
+        pass
+    return page_index
+
+def _get_blogs_by_page():
+    u'分页获取博客数据'
+    total = Blog.count_all()
+    page = Page(total, _get_page_index())
+    blogs = Blog.find_by('order by created_at desc limit ?,?', page.offset, page.limit)
+    return blogs, page
+
 @view('blogs.html')
 @get('/')
 def index():
     u'博客首页'
-    blogs = Blog.find_all()
-    return dict(blogs=blogs, user=ctx.request.user)
+    blogs, page = _get_blogs_by_page()
+    return dict(page=page, blogs=blogs, user=ctx.request.user)
 
 @view('signin.html')
 @get('/signin')
@@ -82,6 +98,18 @@ def signout():
 def register():
     u'注册页面'
     return dict()
+
+@view('manage_blog_edit.html')
+@get('/manage/blogs/create')
+def manage_blogs_create():
+    u'编辑日志页面'
+    return dict(id=None, action='/api/blogs', redirect='/manage/blogs', user=ctx.request.user)
+
+@view('manage_blog_list.html')
+@get('/manage/blogs')
+def manage_blogs():
+    u'博客列表页面'
+    return dict(page_index=_get_page_index(), user=ctx.request.user)
 
 @api
 @get('/api/users')
@@ -143,6 +171,37 @@ def authenticate():
     user.password = '******'
     return user
 
+@api
+@post('/api/blogs')
+def api_create_blog():
+    u'创建一个Blog'
+    check_admin()
+    i = ctx.request.input(name='', summary='', content='')
+    name = i.name.strip()
+    summary = i.summary.strip()
+    content = i.content.strip()
+    if not name:
+        raise APIValueError('name', 'name cannot be empty.')
+    if not summary:
+        raise APIValueError('summary', 'summary cannot be empty.')
+    if not content:
+        raise APIValueError('content', 'content cannot be empty.')
+    user = ctx.request.user
+    blog = Blog(user_id=user.id, user_name=user.name, user_image=user.image, name=name, summary=summary, content=content)
+    blog.insert()
+    return blog
+
+@api
+@get('/api/blogs')
+def api_get_blogs():
+    u'分页获取博客数据API'
+    format = ctx.request.get('format', '')
+    blogs, page = _get_blogs_by_page()
+    if format=='html':
+        for blog in blogs:
+            blog.content = markdown2.markdown(blog.content)
+    return dict(blogs=blogs, page=page)
+
 @interceptor('/')
 def user_interceptor(next):
     u'''
@@ -166,5 +225,4 @@ def manage_interceptor(next):
     if user and user.admin:
         return next()
     raise seeother('/signin')
-
 

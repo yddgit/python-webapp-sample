@@ -1,0 +1,112 @@
+{% extends '__base__.html' %}
+
+{% block title %}编辑日志{% endblock %}
+
+{% block beforehead %}
+
+<script>
+
+var
+    action = '{{ action }}',
+    redirect = '{{ redirect }}';
+
+function initVue(blog) {
+    // 在MVVM中，Model和View是双向绑定的
+    // 一旦修改了form中的值，可以在Model中立刻拿到新的值
+    // 在JavaScript逻辑中修改了Model，这个修改会立刻反映到View上
+    var vm = new Vue({
+        el: '#form-blog', // 根据选择器查找绑定的view
+        data: blog,  // JavaScript对象表示的Model，在<form>标签中用几个简单的v-model将Model和View关联起来
+        methods: { // View可以触发的JavaScript函数，submit就是提交表单时触发的函数
+            // 表单通过<form v-on="submit: submit">把提交表单的事件关联到submit方法
+            submit: function (event) {
+                event.preventDefault();
+                startLoading();
+                postApi(action, this.$data, function (err, r) {
+                    if (err) {
+                        showError(err);
+                    } else {
+                        return location.assign(redirect);
+                    }
+                    stopLoading();
+                });
+            },
+            cancel: function() {
+                location.assign(redirect);
+            }
+        }
+    });
+}
+
+// {% if id %}
+
+$(function () {
+    startLoading();
+    getApi('/api/blogs/{{ id }}', function (err, blog) {
+        if (err) {
+            showError(err);
+        }
+        else {
+            stopLoading();
+            initVue(blog);
+        }
+    });
+});
+
+// {% else %}
+
+$(function () {
+    initVue({
+        name: '',
+        summary: '',
+        content: ''
+    });
+});
+
+// {% endif %}
+
+</script>
+
+{% endblock %}
+
+{% block content %}
+
+    <div class="uk-width-1-1 uk-margin-bottom">
+        <div class="uk-panel uk-panel-box">
+            <ul class="uk-breadcrumb">
+                <li><a href="/manage/comments">评论</a></li>
+                <li><a href="/manage/blogs">日志</a></li>
+                <li><a href="/manage/users">用户</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="uk-width-2-3">
+        <form id="form-blog" v-on="submit: submit" class="uk-form uk-form-stacked">
+            <div class="uk-alert uk-alert-danger uk-hidden"></div>
+            <div class="uk-form-row">
+                <label class="uk-form-label">标题:</label>
+                <div class="uk-form-controls">
+                    <input v-model="name" name="name" type="text" placeholder="标题" class="uk-width-1-1">
+                </div>
+            </div>
+            <div class="uk-form-row">
+                <label class="uk-form-label">摘要:</label>
+                <div class="uk-form-controls">
+                    <textarea v-model="summary" rows="4" name="summary" placeholder="摘要" class="uk-width-1-1" style="resize:none;"></textarea>
+                </div>
+            </div>
+            <div class="uk-form-row">
+                <label class="uk-form-label">内容:</label>
+                <div class="uk-form-controls">
+                    <textarea v-model="content" rows="16" name="content" placeholder="内容" class="uk-width-1-1" style="resize:none;"></textarea>
+                </div>
+            </div>
+            <div class="uk-form-row">
+                <button type="submit" class="uk-button uk-button-primary"><i class="uk-icon-save"></i> 保存</button>
+                <button v-on="click: cancel()" type="button" class="uk-button"><i class="uk-icon-times"></i> 取消</button>
+            </div>
+        </form>
+    </div>
+
+{% endblock %}
