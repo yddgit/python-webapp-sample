@@ -11,7 +11,7 @@ grant all privileges on test.* to 'www-data'@'localhost' identified by 'www-data
 -- generating SQL for users:
 create table `users` (
   `id` varchar(50) not null,
-  `email` varchar(255) not null,
+  `email` varchar(50) not null,
   `password` varchar(50) not null,
   `admin` bool not null,
   `name` varchar(50) not null,
