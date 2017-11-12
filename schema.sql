@@ -3,7 +3,7 @@
 --   Login MySQL: mysql -u root -p
 --   Execute Script: source /path/to/schema.sql
 drop database if exists test;
-create database test;
+create database test default charset utf8 collate utf8_general_ci;
 use test;
 create user if not exists 'www-data'@'localhost' identified by 'www-data';
 -- grant select, insert, update, delete on test.* to 'www-data'@'localhost' identified by 'www-data';

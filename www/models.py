@@ -71,7 +71,7 @@ if __name__ == '__main__':
         sql.append('--   Login MySQL: mysql -u root -p')
         sql.append('--   Execute Script: source /path/to/schema.sql')
         sql.append('drop database if exists test;')
-        sql.append('create database test;')
+        sql.append('create database test default charset utf8 collate utf8_general_ci;')
         sql.append('use test;')
         sql.append('create user if not exists \'www-data\'@\'localhost\' identified by \'www-data\';')
         sql.append('-- grant select, insert, update, delete on test.* to \'www-data\'@\'localhost\' identified by \'www-data\';')
