@@ -36,9 +36,9 @@ def backup():
     备份服务端数据库到本地
     '''
     dt = _now()
-    f = 'backup-pws-%s.sql' % dt
+    f = 'backup-test-%s.sql' % dt
     with cd('/tmp'):
-        run('mysqldump --user=%s --password=%s --skip-opt --add-drop-table --default-character-set=utf8 --quick pws > %s' % (db_user, db_password, f))
+        run('mysqldump --user=%s --password=%s --skip-opt --add-drop-table --default-character-set=utf8 --quick test > %s' % (db_user, db_password, f))
         run('tar -czvf %s.tar.gz %s' % (f, f))
         get('%s.tar.gz' % f, '%s/backup/' % _current_path())
         run('rm -f %s' % f)
