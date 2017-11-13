@@ -82,7 +82,7 @@ def deploy():
     with settings(warn_only=True):
         sudo('supervisorctl stop pws')
         sudo('supervisorctl start pws')
-        sudo('systemctl restart nginx')
+        sudo('systemctl reload nginx')
 
 # run()函数执行的命令是在服务器上运行，with cd(path)和with lcd(path)类似，把当前目录在服务器端设置为cd()指定的目录
 # 如果一个命令需要sudo权限，就不能用run()，而是用sudo()来执行
@@ -133,7 +133,7 @@ def rollback():
         with settings(warn_only=True):
             sudo('supervisorctl stop pws')
             sudo('supervisorctl start pws')
-            sudo('systemctl restart nginx')
+            sudo('systemctl reload nginx')
         print ('ROLLBACKED OK.')
 
 def restore2local():
