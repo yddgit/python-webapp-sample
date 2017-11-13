@@ -91,3 +91,67 @@ A Python Webapp Sample
    * 访问[Certbot](https://certbot.eff.org/)，按照首页提示，选择Server和操作系统版本，会显示相应的操作步骤
    * 例如Nginx+CentOS7：https://certbot.eff.org/#centosrhel7-nginx
 
+8. 服务器常见配置
+
+   * NAT网络环境下SSH无法连接远程服务器。原因是本地NAT环境和目标Linux相关内核参数不匹配。可以尝试通过修改Linux服务器内核参数来解决该问题
+     ```bash
+     # 查看当前配置
+     cat /proc/sys/net/ipv4/tcp_tw_recycle
+     cat /proc/sys/net/ipv4/tcp_timestamps
+     # 确认上述两个配置值是否为0，如果为1的话，修改如下文件
+     vi /etc/sysctl.conf
+     # 添加如下内容
+     net.ipv4.tcp_tw_recycle=0
+     net.ipv4.tcp_timestamps=0
+     # 使配置生效
+     sysctl -p
+     ```
+
+   * 修改SSH服务配置禁用弱加密算法，参考[Cipherli.st](https://cipherli.st/)的OpenSSH Server配置
+
+     ```bash
+     # OpenSSH Server /etc/ssh/sshd_config
+     Protocol 2
+     HostKey /etc/ssh/ssh_host_ed25519_key
+     HostKey /etc/ssh/ssh_host_rsa_key
+     KexAlgorithms curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
+     Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+     MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com
+     ```
+
+     ```bash
+     # OpenSSH Client /etc/ssh/ssh_config
+     HashKnownHosts yes
+     Host github.com
+       MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512
+     Host *
+       ConnectTimeout 30
+       KexAlgorithms curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
+       MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com
+       Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+       ServerAliveInterval 10
+       ControlMaster auto
+       ControlPersist yes
+       ControlPath ~/.ssh/socket-%r@%h:%p
+     ```
+
+   * 修改Nginx的SSL配置，禁用弱加密算法，参考[Cipherli.st](https://cipherli.st/)的nginx配置
+
+     ```nginx
+     ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH:ECDHE-RSA-AES128-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA128:DHE-RSA-AES128-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-GCM-SHA128:ECDHE-RSA-AES128-SHA384:ECDHE-RSA-AES128-SHA128:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES128-SHA128:DHE-RSA-AES128-SHA128:DHE-RSA-AES128-SHA:DHE-RSA-AES128-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES128-GCM-SHA384:AES128-GCM-SHA128:AES128-SHA128:AES128-SHA128:AES128-SHA:AES128-SHA:DES-CBC3-SHA:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!MD5:!PSK:!RC4";
+     ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+     ssl_prefer_server_ciphers on;
+     ssl_session_cache shared:SSL:10m;
+     # 'always' requires nginx >= 1.7.5, see http://nginx.org/en/docs/http/ngx_http_headers_module.html#add_header
+     add_header Strict-Transport-Security "max-age=63072000; includeSubdomains; preload" always;
+     add_header X-Frame-Options DENY always;
+     add_header X-Content-Type-Options nosniff always;
+     ssl_session_tickets off;
+     ssl_stapling on; # Requires nginx >= 1.3.7
+     ssl_stapling_verify on; # Requires nginx >= 1.3.7
+     ```
+
+     其他参考：
+     * [Mozilla's Server Side TLS Guidelines](https://wiki.mozilla.org/Security/Server_Side_TLS)
+     * [Mozilla’s SSL/TLS Configuration Generator](https://mozilla.github.io/server-side-tls/ssl-config-generator/)
+
