@@ -135,10 +135,10 @@ A Python Webapp Sample
        ControlPath ~/.ssh/socket-%r@%h:%p
      ```
 
-   * 修改Nginx的SSL配置，禁用弱加密算法，参考[Cipherli.st](https://cipherli.st/)的nginx配置
+   * 修改Nginx的SSL配置，禁用弱加密算法
 
      ```nginx
-     ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH:ECDHE-RSA-AES128-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA128:DHE-RSA-AES128-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-GCM-SHA128:ECDHE-RSA-AES128-SHA384:ECDHE-RSA-AES128-SHA128:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES128-SHA128:DHE-RSA-AES128-SHA128:DHE-RSA-AES128-SHA:DHE-RSA-AES128-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES128-GCM-SHA384:AES128-GCM-SHA128:AES128-SHA128:AES128-SHA128:AES128-SHA:AES128-SHA:DES-CBC3-SHA:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!MD5:!PSK:!RC4";
+     ssl_ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA256:!aNULL:!eNULL:!EXPORT:!DES:!MD5:!PSK:!RC4:!ADH:!AECDH:!DSS";
      ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
      ssl_prefer_server_ciphers on;
      ssl_session_cache shared:SSL:10m;
@@ -152,6 +152,13 @@ A Python Webapp Sample
      ```
 
      其他参考：
+     * [Strong SSL Security on nginx](https://raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html)
+     * [加强Nginx的SSL安全](http://www.oschina.net/translate/strong_ssl_security_on_nginx)
+     * [HTTPS安全最佳实践（一）之SSL/TLS部署](https://blog.myssl.com/ssl-and-tls-deployment-best-practices/)
+     * [HTTPS安全最佳实践（二）之安全加固](https://blog.myssl.com/https-security-best-practices/)
+     * [HTTPS安全最佳实践（三）之服务器软件](https://blog.myssl.com/https-security-best-practices-2/)
+     * [Cipherli.st](https://cipherli.st/ "Strong Ciphers for Apache, nginx and Lighttpd")
      * [Mozilla's Server Side TLS Guidelines](https://wiki.mozilla.org/Security/Server_Side_TLS)
      * [Mozilla’s SSL/TLS Configuration Generator](https://mozilla.github.io/server-side-tls/ssl-config-generator/)
+     * [SSL Server Test](https://www.ssllabs.com/ssltest/analyze.html)
 
