@@ -31,6 +31,12 @@ def datetime_filter(t):
     dt = datetime.fromtimestamp(t)
     return u'%s年%s月%s日' % (dt.year, dt.month, dt.day)
 
+def current_time(timeFormat='%Y-%m-%d %H:%M:%S'):
+    u'''
+    格式化当前时间
+    '''
+    return time.strftime(timeFormat)
+
 # 初始化数据库服务
 db.create_engine(**configs.db)
 
@@ -39,6 +45,7 @@ wsgi = WSGIApplication(os.path.dirname(os.path.abspath(__file__)))
 # 初始化jinja2模板引擎
 template_engine = Jinja2TemplateEngine(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'))
 template_engine.add_filter('datetime', datetime_filter)
+template_engine.add_global('current_time', current_time)
 
 wsgi.template_engine = template_engine
 

@@ -1279,6 +1279,9 @@ class Jinja2TemplateEngine(TemplateEngine):
     def add_filter(self, name, fn_filter):
         self._env.filters[name] = fn_filter
 
+    def add_global(self, name, fn_global):
+        self._env.globals[name] = fn_global
+
     def __call__(self, path, model):
         return self._env.get_template(path).render(**model).encode('utf-8')
 
