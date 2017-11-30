@@ -62,6 +62,17 @@ class Comment(Model):
     content = TextField()
     created_at = FloatField(updatable=False, default=time.time)
 
+class Attachment(Model):
+    u'附件'
+    __table__ = 'attachments'
+
+    id = StringField(primary_key=True, default=next_id, ddl='varchar(50)')
+    user_id = StringField(updatable=False, ddl='varchar(50)')
+    file_name = StringField(ddl='varchar(500)')
+    file_path = StringField(ddl='varchar(500)')
+    file_type = StringField(ddl='varchar(200)')
+    created_at = FloatField(updatable=False, default=time.time)
+
 if __name__ == '__main__':
     # 生成schema.sql脚本
     import os
@@ -79,6 +90,7 @@ if __name__ == '__main__':
         sql.append(User().__sql__())
         sql.append(Blog().__sql__())
         sql.append(Comment().__sql__())
+        sql.append(Attachment().__sql__())
         f.write('\n'.join(sql))
     # 执行doctest
     import logging

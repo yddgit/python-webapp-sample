@@ -42,3 +42,13 @@ create table `comments` (
   `created_at` real not null,
   primary key(`id`)
 );
+-- generating SQL for attachments:
+create table `attachments` (
+  `id` varchar(50) not null,
+  `user_id` varchar(50) not null,
+  `file_name` varchar(500) not null,
+  `file_path` varchar(500) not null,
+  `file_type` varchar(200) not null,
+  `created_at` real not null,
+  primary key(`id`)
+);
