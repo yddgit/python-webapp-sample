@@ -166,3 +166,19 @@ A Python Webapp Sample
      * [Mozilla’s SSL/TLS Configuration Generator](https://mozilla.github.io/server-side-tls/ssl-config-generator/)
      * [SSL Server Test](https://www.ssllabs.com/ssltest/analyze.html)
 
+   * 如果要上传文件，可能需要修改Nginx如下配置
+
+     ```nginx
+     server {
+         ...
+         client_max_body_size 10m;
+         ...
+     }
+     ```
+
+     然后重新加载配置
+
+     ```bash
+     systemctl reload nginx
+     ```
+
