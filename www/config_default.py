@@ -17,7 +17,7 @@ configs = {
         'secret': 'AwEsOmE'
     },
     'upload': {
-        'path': '/static/attachment',
+        'path': '/attachment',
         'allowFileType': ['jpg', 'jpeg', 'gif', 'png', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'],
         'maxSize': 10 * 1024 * 1024 #10MB
     }

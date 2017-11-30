@@ -46,8 +46,8 @@ create table `comments` (
 create table `attachments` (
   `id` varchar(50) not null,
   `user_id` varchar(50) not null,
+  `local_name` varchar(50) not null,
   `file_name` varchar(500) not null,
-  `file_path` varchar(500) not null,
   `file_type` varchar(200) not null,
   `file_size` bigint not null,
   `created_at` real not null,

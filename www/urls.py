@@ -25,6 +25,11 @@ _UPLOAD_MAX_SIZE = configs.upload.maxSize
 def next_id():
     return '%015d%s000' % (int(time.time() * 1000), uuid.uuid4().hex)
 
+def get_local_file_path(local_name):
+    u'获取附件的本地路径'
+    file_path = '%s/%s' % (_UPLOAD_PATH, local_name) # file path
+    return os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), file_path[1:]))
+
 # HTTP协议是无状态协议，服务器要跟踪用户状态只能通过cookie实现
 # 大多数Web框架提供了session功能来封装保存用户状态的cookie，简单易用，可以直接从Session中取出用户登录信息
 # Session的缺点是服务器需要在内存中维护一个映射表来存储用户登录信息，如果有两台以上服务器就要对Session做集群，难以扩展
@@ -179,7 +184,7 @@ def attachment(attachment_id):
     attachment = Attachment.get(attachment_id)
     if attachment is None:
         raise notfound()
-    local_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), attachment.file_path[1:]))
+    local_path = get_local_file_path(attachment.local_name)
     if not os.path.exists(local_path):
         raise notfound()
     if not os.path.isfile(local_path):
@@ -376,33 +381,36 @@ def api_create_attachment():
     if not isinstance(f, MultipartFile):
         raise APIValueError('attachment_file', 'attachment_file must be a file.')
 
-    # 检验文件参数
-    file_name = f.filename # filename
+    # 文件名
+    file_name = f.filename
     if not file_name:
         raise APIValueError('file_name', 'file_name cannot be empty.')
     file_name = re.split(r'[/\\]', file_name)[-1] # 获取不包含路径的文件名
 
-    fext = os.path.splitext(file_name)[1] # file ext
+    # 扩展名
+    fext = os.path.splitext(file_name)[1]
     if not fext[1:] in _UPLOAD_ALLOW_FILE_TYPE:
         raise APIValueError('file_type', '*%s file is not allowed to upload.' % fext)
 
-    file_type = mimetypes.types_map.get(fext.lower(), 'application/octet-stream') # content-type
+    # Content-Type
+    file_type = mimetypes.types_map.get(fext.lower(), 'application/octet-stream')
     if not file_type:
         raise APIValueError('file_type', 'file_type cannot be empty.')
 
-    file_data = f.file # file data
+    # 文件内容
+    file_data = f.file
     if not file_data:
         raise APIValueError('file_data', 'file_data cannot be empty.')
 
-    # 保存上传的文件
-    file_path = '%s/%s' % (_UPLOAD_PATH, next_id()) # file path
-    local_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), file_path[1:]))
+    # 生成本地保存的文件名
+    local_name = next_id()
+
+    # 保存上传的文件(若目录不存在则自动创建)
+    local_path = get_local_file_path(local_name)
     if not os.path.exists(os.path.dirname(local_path)):
         # 支持递归创建多级目录
         os.makedirs(os.path.dirname(local_path))
-
-    # Buffer Size
-    BLOCK_SIZE = 8192
+    BLOCK_SIZE = 8192 # Buffer Size
     with open(local_path, 'wb') as upload_file:
         file_size = 0
         while True:
@@ -413,16 +421,15 @@ def api_create_attachment():
             if file_size > _UPLOAD_MAX_SIZE:
                 break
             upload_file.write(data)
-
     # 文件过大不能上传
     if file_size > _UPLOAD_MAX_SIZE:
         os.remove(local_path)
         raise APIError('file too big to upload.')
 
     # 保存数据库记录
-    local_file_size = os.path.getsize(local_path) # file size
+    local_file_size = os.path.getsize(local_path)
     user = ctx.request.user
-    attachment = Attachment(user_id=user.id, file_name=file_name, file_path=file_path, file_type=file_type, file_size=local_file_size)
+    attachment = Attachment(user_id=user.id, local_name=local_name, file_name=file_name, file_type=file_type, file_size=local_file_size)
     attachment.insert()
     return attachment
 
@@ -435,7 +442,7 @@ def api_delete_attachment(attachment_id):
     if attachment is None:
         raise APIResourceNotFoundError('Attachment')
     # 删除本地文件
-    local_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), attachment.file_path[1:]))
+    local_path = get_local_file_path(attachment.local_name)
     if os.path.exists(local_path):
         os.remove(local_path)
     # 删除数据库记录

@@ -68,8 +68,8 @@ class Attachment(Model):
 
     id = StringField(primary_key=True, default=next_id, ddl='varchar(50)')
     user_id = StringField(updatable=False, ddl='varchar(50)')
+    local_name = StringField(ddl='varchar(50)')
     file_name = StringField(ddl='varchar(500)')
-    file_path = StringField(ddl='varchar(500)')
     file_type = StringField(ddl='varchar(200)')
     file_size = IntegerField()
     created_at = FloatField(updatable=False, default=time.time)
