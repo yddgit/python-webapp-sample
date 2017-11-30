@@ -49,6 +49,7 @@ create table `attachments` (
   `file_name` varchar(500) not null,
   `file_path` varchar(500) not null,
   `file_type` varchar(200) not null,
+  `file_size` bigint not null,
   `created_at` real not null,
   primary key(`id`)
 );
