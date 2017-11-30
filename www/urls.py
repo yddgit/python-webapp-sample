@@ -184,9 +184,10 @@ def attachment(attachment_id):
         raise notfound()
     if not os.path.isfile(local_path):
         raise notfound()
+    file_name_encode = quote(attachment.file_name.encode('utf-8'))
     ctx.response.set_header('Content-Length', os.path.getsize(local_path))
     ctx.response.set_header('Content-Type', attachment.file_type)
-    ctx.response.set_header('Content-Disposition', 'attachment;filename="%s"' % quote(attachment.file_name.encode('utf-8')))
+    ctx.response.set_header('Content-Disposition', 'attachment;filename="%s";filename*=UTF-8\'\'%s' % (file_name_encode, file_name_encode))
     return static_file_generator(local_path)
 
 @api
@@ -370,7 +371,7 @@ def api_create_attachment():
     check_admin()
 
     # 获取上传的文件
-    i = ctx.request.input(attachment_file='')
+    i = ctx.request.input(attachment_file={})
     f = i.attachment_file
     if not isinstance(f, MultipartFile):
         raise APIValueError('attachment_file', 'attachment_file must be a file.')
@@ -379,6 +380,7 @@ def api_create_attachment():
     file_name = f.filename # filename
     if not file_name:
         raise APIValueError('file_name', 'file_name cannot be empty.')
+    file_name = re.split(r'[/\\]', file_name)[-1] # 获取不包含路径的文件名
 
     fext = os.path.splitext(file_name)[1] # file ext
     if not fext[1:] in _UPLOAD_ALLOW_FILE_TYPE:
@@ -418,8 +420,9 @@ def api_create_attachment():
         raise APIError('file too big to upload.')
 
     # 保存数据库记录
+    local_file_size = os.path.getsize(local_path) # file size
     user = ctx.request.user
-    attachment = Attachment(user_id=user.id, file_name=file_name, file_path=file_path, file_type=file_type)
+    attachment = Attachment(user_id=user.id, file_name=file_name, file_path=file_path, file_type=file_type, file_size=local_file_size)
     attachment.insert()
     return attachment
 
