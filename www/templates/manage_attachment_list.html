@@ -1,17 +1,17 @@
 {% extends '__base__.html' %}
 
-{% block title %}评论{% endblock %}
+{% block title %}附件{% endblock %}
 
 {% block beforehead %}
 
 <script>
 
 function initVM(data) {
-    $('#div-comments').show();
+    $('#div-attachments').show();
     var vm = new Vue({
-        el: '#div-comments',
+        el: '#div-attachments',
         data: {
-            comments: data.comments,
+            attachments: data.attachments,
             page: data.page
         },
         methods: {
@@ -21,10 +21,10 @@ function initVM(data) {
             next: function () {
                 gotoPage(this.page.page_index + 1);
             },
-            delete_comment: function (comment) {
-                var content = comment.content.length > 20 ? comment.content.substring(0, 20) + '...' : comment.content;
-                showConfirm('确认删除？', '确认要删除评论“' + comment.content + '”？删除后不可恢复！', function () {
-                    postApi('/api/comments/' + comment.id + '/delete', {}, function (err, r) {
+            delete_attachment: function (attachment) {
+                var file_name = attachment.file_name.length > 20 ? attachment.file_name.substring(0, 20) + '...' : attachment.file_name;
+                showConfirm('确认删除？', '确认要删除附件“' + file_name + '”？删除后不可恢复！', function () {
+                    postApi('/api/attachments/' + attachment.id + '/delete', {}, function (err, r) {
                         if (err) {
                             return showError(err);
                         }
@@ -37,7 +37,7 @@ function initVM(data) {
 }
 
 $(function() {
-    getApi('/api/comments?page={{ page_index }}', function (err, results) {
+    getApi('/api/attachments?page={{ page_index }}', function (err, results) {
         if (err) {
             return showError(err);
         }
@@ -55,10 +55,10 @@ $(function() {
     <div class="uk-width-1-1 uk-margin-bottom">
         <div class="uk-panel uk-panel-box">
             <ul class="uk-breadcrumb">
-                <li class="uk-active"><span>评论</span></li>
+                <li><a href="/manage/comments">评论</a></li>
                 <li><a href="/manage/blogs">日志</a></li>
                 <li><a href="/manage/users">用户</a></li>
-                <li><a href="/manage/attachments">附件</a></li>
+                <li class="uk-active"><span>附件</span></li>
             </ul>
         </div>
     </div>
@@ -67,29 +67,28 @@ $(function() {
         <div class="uk-alert uk-alert-danger uk-hidden"></div>
     </div>
 
-    <div id="div-comments" class="uk-width-1-1" style="display:none">
+    <div id="div-attachments" class="uk-width-1-1" style="display:none">
+        <a href="/manage/attachments/create" class="uk-button uk-button-primary"><i class="uk-icon-plus"></i> 上传新附件</a>
+
         <table class="uk-table uk-table-hover">
             <thead>
                 <tr>
-                    <th class="uk-width-2-10">作者</th>
-                    <th class="uk-width-5-10">内容</th>
+                    <th class="uk-width-2-10">文件名</th>
                     <th class="uk-width-2-10">创建时间</th>
                     <th class="uk-width-1-10">操作</th>
                 </tr>
             </thead>
             <tbody>
-                <tr v-repeat="comment: comments" >
+                <tr v-repeat="attachment: attachments" >
                     <td>
-                        <span v-text="comment.user_name"></span>
+                        <span v-text="attachment.file_name"></span>
                     </td>
                     <td>
-                        <span v-text="comment.content"></span>
+                        <span v-text="attachment.created_at.toDateTime()"></span>
                     </td>
                     <td>
-                        <span v-text="comment.created_at.toDateTime()"></span>
-                    </td>
-                    <td>
-                        <a href="#0" v-on="click: delete_comment(comment)"><i class="uk-icon-trash-o"></i>
+                        <a target="_blank" v-attr="href: '/attachment/'+attachment.id"><i class="uk-icon-download"></i></a>
+                        <a href="#0" v-on="click: delete_attachment(attachment)"><i class="uk-icon-trash-o"></i></a>
                     </td>
                 </tr>
             </tbody>

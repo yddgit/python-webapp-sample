@@ -1,0 +1,91 @@
+{% extends '__base__.html' %}
+
+{% block title %}上传新附件{% endblock %}
+
+{% block beforehead %}
+
+<link rel="stylesheet" href="/static/css/components/upload.min.css" />
+<link rel="stylesheet" href="/static/css/components/progress.min.css" />
+<link rel="stylesheet" href="/static/css/components/form-file.min.css" />
+<link rel="stylesheet" href="/static/css/components/placeholder.min.css" />
+<script src="/static/js/components/upload.min.js"></script>
+
+<script>
+
+var
+    action = '{{ action }}',
+    redirect = '{{ redirect }}',
+    allow = '{{ allow_file_type }}';
+
+$(function(){
+    var
+        progressbar = $("#progressbar"),
+        bar = progressbar.find('.uk-progress-bar'),
+        settings = {
+            action: action, // 上传的目标URL
+            single: false, // 逐一进行文件发送
+            param: "attachment_file", // 文件在中的request中的参数名称
+            allow: '*.(' + allow + ')', // 文件过滤器，如：'*.(jpg|jpeg|gif|png)'
+            filelimit: 1, // 文件上传数量限制
+            type: "json", // 服务器的响应类型
+            loadstart: function() {
+                bar.css("width", "0%").text("0%");
+                progressbar.removeClass("uk-hidden");
+            },
+            notallowed: function(file, settings) {
+                showError("只能上传指定类型的文件" + settings.allow.substring(2).replace(/\|/g, ", "));
+            },
+            progress: function(percent) {
+                percent = Math.ceil(percent);
+                bar.css("width", percent+"%").text(percent+"%");
+            },
+            allcomplete: function(response) {
+                bar.css("width", "100%").text("100%");
+                if(response.file_name) {
+                    showError(response.file_name + "上传成功");
+                } else {
+                    showError(response);
+                }
+                setTimeout(function(){
+                    progressbar.addClass("uk-hidden");
+                }, 250);
+            },
+            error: function(event) {
+                showError("上传附件异常");
+            }
+        };
+    var
+        select = UIkit.uploadSelect($("#upload-select"), settings),
+        drop   = UIkit.uploadDrop($("#upload-drop"), settings);
+});
+
+</script>
+
+{% endblock %}
+
+{% block content %}
+
+    <div class="uk-width-1-1 uk-margin-bottom">
+        <div class="uk-panel uk-panel-box">
+            <ul class="uk-breadcrumb">
+                <li><a href="/manage/comments">评论</a></li>
+                <li><a href="/manage/blogs">日志</a></li>
+                <li><a href="/manage/users">用户</a></li>
+                <li><a href="/manage/attachments">附件</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="uk-width-2-3">
+        <h2>上传新附件</h2>
+        <div class="uk-alert uk-alert-danger uk-hidden"></div>
+        <div id="upload-drop" class="uk-placeholder uk-text-center">
+            <i class="uk-icon-cloud-upload uk-icon-medium uk-text-muted uk-margin-small-right"></i>
+            将文件拖拽至此 或 <a class="uk-form-file">选择一个文件<input id="upload-select" type="file"></a>.
+        </div>
+        <div id="progressbar" class="uk-progress uk-hidden">
+            <div class="uk-progress-bar" style="width: 0%;">0%</div>
+        </div>
+    </div>
+
+{% endblock %}

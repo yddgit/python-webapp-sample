@@ -1,19 +1,29 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os, re, time, base64, hashlib, logging
+import os, re, time, base64, hashlib, logging, uuid, mimetypes
+from urllib import quote
 
 import markdown2
 
-from transwarp.web import get, post, view, ctx, interceptor, seeother, notfound
+from transwarp.web import get, post, view, ctx, interceptor, seeother, notfound, static_file_generator, MultipartFile
 from apis import api, Page, APIError, APIValueError, APIPermissionError, APIResourceNotFoundError
-from models import User, Blog, Comment
+from models import User, Blog, Comment, Attachment
 from config import configs
 
 # Cookie名称
 _COOKIE_NAME = 'pwssession'
 # Cookie SecretKey
 _COOKIE_KEY = configs.session.secret
+# Upload Path
+_UPLOAD_PATH = configs.upload.path
+# Upload Allow File Type
+_UPLOAD_ALLOW_FILE_TYPE = configs.upload.allowFileType
+# Upload Max Size
+_UPLOAD_MAX_SIZE = configs.upload.maxSize
+
+def next_id():
+    return '%015d%s000' % (int(time.time() * 1000), uuid.uuid4().hex)
 
 # HTTP协议是无状态协议，服务器要跟踪用户状态只能通过cookie实现
 # 大多数Web框架提供了session功能来封装保存用户状态的cookie，简单易用，可以直接从Session中取出用户登录信息
@@ -149,6 +159,35 @@ def manage_users():
 def manage_blogs():
     u'博客列表页面'
     return dict(page_index=_get_page_index(), user=ctx.request.user)
+
+@view('manage_attachment_list.html')
+@get('/manage/attachments')
+def manage_attachments():
+    u'附件列表页面'
+    return dict(page_index=_get_page_index(), user=ctx.request.user)
+
+@view('manage_attachment_create.html')
+@get('/manage/attachments/create')
+def manage_attachments_create():
+    u'创建附件页面'
+    allow_file_type = "|".join(_UPLOAD_ALLOW_FILE_TYPE)
+    return dict(id=None, action='/api/attachments', redirect='/manage/attachments', allow_file_type=allow_file_type, user=ctx.request.user)
+
+@get('/attachment/:attachment_id')
+def attachment(attachment_id):
+    u'下载附件'
+    attachment = Attachment.get(attachment_id)
+    if attachment is None:
+        raise notfound()
+    local_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), attachment.file_path[1:]))
+    if not os.path.exists(local_path):
+        raise notfound()
+    if not os.path.isfile(local_path):
+        raise notfound()
+    ctx.response.set_header('Content-Length', os.path.getsize(local_path))
+    ctx.response.set_header('Content-Type', attachment.file_type)
+    ctx.response.set_header('Content-Disposition', 'attachment;filename="%s"' % quote(attachment.file_name.encode('utf-8')))
+    return static_file_generator(local_path)
 
 @api
 @get('/api/users')
@@ -323,6 +362,92 @@ def api_get_comments():
     page = Page(total, _get_page_index())
     comments = Comment.find_by('order by created_at desc limit ?,?', page.offset, page.limit)
     return dict(comments=comments, page=page)
+
+@api
+@post('/api/attachments')
+def api_create_attachment():
+    u'创建附件API'
+    check_admin()
+
+    # 获取上传的文件
+    i = ctx.request.input(attachment_file='')
+    f = i.attachment_file
+    if not isinstance(f, MultipartFile):
+        raise APIValueError('attachment_file', 'attachment_file must be a file.')
+
+    # 检验文件参数
+    file_name = f.filename # filename
+    if not file_name:
+        raise APIValueError('file_name', 'file_name cannot be empty.')
+
+    fext = os.path.splitext(file_name)[1] # file ext
+    if not fext[1:] in _UPLOAD_ALLOW_FILE_TYPE:
+        raise APIValueError('file_type', '*%s file is not allowed to upload.' % fext)
+
+    file_type = mimetypes.types_map.get(fext.lower(), 'application/octet-stream') # content-type
+    if not file_type:
+        raise APIValueError('file_type', 'file_type cannot be empty.')
+
+    file_data = f.file # file data
+    if not file_data:
+        raise APIValueError('file_data', 'file_data cannot be empty.')
+
+    # 保存上传的文件
+    file_path = '%s/%s' % (_UPLOAD_PATH, next_id()) # file path
+    local_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), file_path[1:]))
+    if not os.path.exists(os.path.dirname(local_path)):
+        # 支持递归创建多级目录
+        os.makedirs(os.path.dirname(local_path))
+
+    # Buffer Size
+    BLOCK_SIZE = 8192
+    with open(local_path, 'wb') as upload_file:
+        file_size = 0
+        while True:
+            data = file_data.read(BLOCK_SIZE)
+            if not data:
+                break
+            file_size = file_size + len(data)
+            if file_size > _UPLOAD_MAX_SIZE:
+                break
+            upload_file.write(data)
+
+    # 文件过大不能上传
+    if file_size > _UPLOAD_MAX_SIZE:
+        os.remove(local_path)
+        raise APIError('file too big to upload.')
+
+    # 保存数据库记录
+    user = ctx.request.user
+    attachment = Attachment(user_id=user.id, file_name=file_name, file_path=file_path, file_type=file_type)
+    attachment.insert()
+    return attachment
+
+@api
+@post('/api/attachments/:attachment_id/delete')
+def api_delete_attachment(attachment_id):
+    u'删除附件API'
+    check_admin()
+    attachment = Attachment.get(attachment_id)
+    if attachment is None:
+        raise APIResourceNotFoundError('Attachment')
+    # 删除本地文件
+    local_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), attachment.file_path[1:]))
+    if os.path.exists(local_path):
+        os.remove(local_path)
+    # 删除数据库记录
+    attachment.delete()
+    return dict(id=attachment_id)
+
+@api
+@get('/api/attachments')
+def api_get_attachments():
+    u'附件列表API'
+    check_admin()
+    total = Attachment.count_all()
+    page = Page(total, _get_page_index())
+    attachments = Attachment.find_by('order by created_at desc limit ?,?', page.offset, page.limit)
+    return dict(attachments=attachments, page=page)
 
 @interceptor('/')
 def user_interceptor(next):

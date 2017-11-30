@@ -598,7 +598,8 @@ class Route(object):
 
     __repr__ = __str__
 
-def _static_file_generator(fpath):
+def static_file_generator(fpath):
+    u'下载静态文件'
     BLOCK_SIZE = 8192
     with open(fpath, 'rb') as f:
         block = f.read(BLOCK_SIZE)
@@ -624,7 +625,7 @@ class StaticFileRoute(object):
             raise notfound()
         fext = os.path.splitext(fpath)[1]
         ctx.response.content_type = mimetypes.types_map.get(fext.lower(), 'application/octet-stream')
-        return _static_file_generator(fpath)
+        return static_file_generator(fpath)
 
 def favicon_handler():
     return static_file_handler('/favicon.ico')
@@ -640,6 +641,7 @@ class MultipartFile(object):
     def __init__(self, storage):
         self.filename = _to_unicode(storage.filename)
         self.file = storage.file
+        self.type = storage.type
 
 class Request(object):
     u'request对象'
